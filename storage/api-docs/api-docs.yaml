@@ -1,0 +1,684 @@
+openapi: 3.0.3
+info:
+  title: News Aggregator API
+  description: |
+    A comprehensive news aggregator API that fetches articles from multiple sources (NewsAPI, The Guardian, New York Times) 
+    and provides personalized news feeds based on user preferences.
+    
+    ## Features
+    - Multi-source news aggregation
+    - User preference-based personalization
+    - Advanced filtering (search, date range, source, category, author)
+    - RESTful API design
+    - Token-based authentication
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@newsaggregator.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local development server
+  - url: https://api.newsaggregator.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints (register, login, logout)
+  - name: Articles
+    description: Article retrieval and filtering endpoints
+  - name: Metadata
+    description: Endpoints for sources, categories, and authors
+  - name: Preferences
+    description: User preference management (requires authentication)
+
+paths:
+  /register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account and receive an authentication token
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - password_confirmation
+              properties:
+                name:
+                  type: string
+                  example: John Doe
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: password123
+                password_confirmation:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    example: 1|abcdefghijklmnopqrstuvwxyz123456
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                emailTaken:
+                  value:
+                    message: The given data was invalid.
+                    errors:
+                      email:
+                        - The email has already been taken.
+                passwordMismatch:
+                  value:
+                    message: The given data was invalid.
+                    errors:
+                      password:
+                        - The password confirmation does not match.
+
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user and receive an authentication token
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    example: 2|zyxwvutsrqponmlkjihgfedcba987654
+        '422':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: The provided credentials are incorrect.
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        items:
+                          type: string
+                        example: ['The provided credentials are incorrect.']
+
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Revoke the current user's authentication token
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+
+  /articles:
+    get:
+      tags:
+        - Articles
+      summary: Get paginated list of articles
+      description: |
+        Retrieve a paginated list of articles with optional filters. 
+        For authenticated users, articles are personalized based on saved preferences unless explicit filters are provided.
+      operationId: getArticles
+      parameters:
+        - name: q
+          in: query
+          description: Search query (searches in title, description, and content)
+          required: false
+          schema:
+            type: string
+            example: technology
+        - name: source
+          in: query
+          description: Filter by news source (comma-separated for multiple)
+          required: false
+          schema:
+            type: string
+            example: newsapi,guardian
+        - name: category
+          in: query
+          description: Filter by category (comma-separated for multiple)
+          required: false
+          schema:
+            type: string
+            example: business,technology
+        - name: author
+          in: query
+          description: Filter by author name (comma-separated for multiple)
+          required: false
+          schema:
+            type: string
+            example: John Doe
+        - name: from
+          in: query
+          description: Filter articles from this date (Y-m-d format)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: '2025-10-01'
+        - name: to
+          in: query
+          description: Filter articles up to this date (Y-m-d format)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: '2025-10-24'
+        - name: per_page
+          in: query
+          description: Number of results per page
+          required: false
+          schema:
+            type: integer
+            default: 15
+            minimum: 1
+            maximum: 100
+            example: 20
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+            example: 1
+        - name: ignore_preferences
+          in: query
+          description: Ignore user preferences and show global feed (authenticated users only)
+          required: false
+          schema:
+            type: boolean
+            example: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleCollection'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+        - {}
+
+  /articles/{id}:
+    get:
+      tags:
+        - Articles
+      summary: Get single article by ID
+      description: Retrieve detailed information about a specific article
+      operationId: getArticleById
+      parameters:
+        - name: id
+          in: path
+          description: Article ID
+          required: true
+          schema:
+            type: integer
+            example: 123
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Article'
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sources:
+    get:
+      tags:
+        - Metadata
+      summary: Get available news sources
+      description: Retrieve list of all configured news sources with their status
+      operationId: getSources
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Source'
+
+  /categories:
+    get:
+      tags:
+        - Metadata
+      summary: Get available categories
+      description: Retrieve list of all article categories found in the database
+      operationId: getCategories
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+                    example: ['business', 'technology', 'sports', 'entertainment']
+
+  /authors:
+    get:
+      tags:
+        - Metadata
+      summary: Get available authors
+      description: Retrieve list of all article authors found in the database
+      operationId: getAuthors
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+                    example: ['John Doe', 'Jane Smith', 'Bob Johnson']
+
+  /preferences:
+    get:
+      tags:
+        - Preferences
+      summary: Get user preferences
+      description: Retrieve the authenticated user's saved article preferences
+      operationId: getPreferences
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserPreference'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Preferences
+      summary: Save user preferences
+      description: Create or update the authenticated user's article preferences
+      operationId: savePreferences
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceInput'
+      responses:
+        '200':
+          description: Preferences saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Preferences saved successfully
+                  data:
+                    $ref: '#/components/schemas/UserPreference'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+    delete:
+      tags:
+        - Preferences
+      summary: Delete user preferences
+      description: Remove all saved preferences for the authenticated user
+      operationId: deletePreferences
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Preferences deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Preferences deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Laravel Sanctum token authentication
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        email_verified_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-24T10:30:00.000000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-10-24T10:30:00.000000Z'
+
+    Article:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        title:
+          type: string
+          example: Breaking News in Technology
+        description:
+          type: string
+          nullable: true
+          example: A brief summary of the article content
+        content:
+          type: string
+          nullable: true
+          example: Full article content goes here...
+        author:
+          type: string
+          nullable: true
+          example: John Doe
+        source:
+          type: object
+          properties:
+            id:
+              type: string
+              enum: [newsapi, guardian, nytimes]
+              example: newsapi
+            name:
+              type: string
+              example: NewsAPI
+        category:
+          type: string
+          nullable: true
+          example: technology
+        url:
+          type: string
+          format: uri
+          example: https://example.com/article
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          example: https://example.com/image.jpg
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2025-10-24T10:00:00Z'
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-24T11:00:00Z'
+
+    ArticleCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Article'
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 150
+            per_page:
+              type: integer
+              example: 15
+            current_page:
+              type: integer
+              example: 1
+            last_page:
+              type: integer
+              example: 10
+
+    Source:
+      type: object
+      properties:
+        id:
+          type: string
+          enum: [newsapi, guardian, nytimes]
+          example: newsapi
+        name:
+          type: string
+          example: NewsAPI
+        enabled:
+          type: boolean
+          example: true
+
+    UserPreference:
+      type: object
+      properties:
+        preferred_sources:
+          type: array
+          items:
+            type: string
+            enum: [newsapi, guardian, nytimes]
+          example: ['newsapi', 'guardian']
+        preferred_categories:
+          type: array
+          items:
+            type: string
+          example: ['technology', 'business']
+        preferred_authors:
+          type: array
+          items:
+            type: string
+          example: ['John Doe', 'Jane Smith']
+        keywords:
+          type: array
+          items:
+            type: string
+          example: ['AI', 'cryptocurrency', 'startup']
+
+    UserPreferenceInput:
+      type: object
+      properties:
+        preferred_sources:
+          type: array
+          items:
+            type: string
+            enum: [newsapi, guardian, nytimes]
+          nullable: true
+          example: ['newsapi', 'guardian']
+        preferred_categories:
+          type: array
+          items:
+            type: string
+            maxLength: 255
+          nullable: true
+          example: ['technology', 'business']
+        preferred_authors:
+          type: array
+          items:
+            type: string
+            maxLength: 255
+          nullable: true
+          example: ['John Doe']
+        keywords:
+          type: array
+          items:
+            type: string
+            maxLength: 255
+          nullable: true
+          example: ['AI', 'machine learning']
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Article not found
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            preferred_sources.0:
+              - Each source must be one of newsapi, guardian, nytimes
