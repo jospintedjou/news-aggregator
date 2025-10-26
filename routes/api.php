@@ -18,28 +18,36 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Authentication routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::name('auth.')->group(function () {
+    Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
+});
 
-// Public routes
-Route::get('/articles', [ArticleController::class, 'index']);
-Route::get('/articles/{id}', [ArticleController::class, 'show']);
-Route::get('/sources', [ArticleController::class, 'sources']);
-Route::get('/categories', [ArticleController::class, 'categories']);
-Route::get('/authors', [ArticleController::class, 'authors']);
+// Public article routes
+Route::prefix('articles')->name('articles.')->group(function () {
+    Route::get('/', [ArticleController::class, 'index'])->name('index');
+    Route::get('/{id}', [ArticleController::class, 'show'])->name('show')->where('id', '[0-9]+');
+});
+
+// Additional article-related routes
+Route::name('articles.')->group(function () {
+    Route::get('/sources', [ArticleController::class, 'sources'])->name('sources');
+    Route::get('/categories', [ArticleController::class, 'categories'])->name('categories');
+    Route::get('/authors', [ArticleController::class, 'authors'])->name('authors');
+});
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     // User info
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    Route::get('/user', [AuthController::class, 'user'])->name('auth.user');
 
     // Logout
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
     // User preferences
-    Route::get('/preferences', [PreferenceController::class, 'show']);
-    Route::post('/preferences', [PreferenceController::class, 'store']);
-    Route::delete('/preferences', [PreferenceController::class, 'destroy']);
+    Route::prefix('preferences')->name('preferences.')->group(function () {
+        Route::get('/', [PreferenceController::class, 'show'])->name('show');
+        Route::post('/', [PreferenceController::class, 'store'])->name('store');
+        Route::delete('/', [PreferenceController::class, 'destroy'])->name('destroy');
+    });
 });

@@ -277,7 +277,9 @@ class AuthenticationTest extends TestCase
 
         $authResponse->assertStatus(200)
             ->assertJson([
-                'email' => 'test@example.com',
+                'data' => [
+                    'email' => 'test@example.com',
+                ]
             ]);
     }
 
@@ -305,7 +307,9 @@ class AuthenticationTest extends TestCase
 
         $authResponse->assertStatus(200)
             ->assertJson([
-                'email' => 'test@example.com',
+                'data' => [
+                    'email' => 'test@example.com',
+                ]
             ]);
     }
 }

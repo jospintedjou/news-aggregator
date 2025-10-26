@@ -102,7 +102,7 @@ class NewsServiceTest extends TestCase
         $this->assertEquals('Full article body content', $result->content);
         $this->assertEquals('Jane Smith', $result->author);
         $this->assertEquals('guardian', $result->source);
-        $this->assertEquals('technology', $result->category);
+        $this->assertEquals('Technology', $result->category); // Guardian returns capitalized categories
         $this->assertEquals('https://guardian.com/article', $result->url);
         $this->assertEquals('https://guardian.com/image.jpg', $result->imageUrl);
         $this->assertEquals('guardian-123', $result->externalId);
@@ -168,7 +168,7 @@ class NewsServiceTest extends TestCase
         $this->assertEquals('Article lead paragraph content', $result->content);
         $this->assertEquals('By Bob Wilson', $result->author);
         $this->assertEquals('nytimes', $result->source);
-        $this->assertEquals('business', $result->category);
+        $this->assertEquals('Business', $result->category); // NYTimes returns capitalized categories
         $this->assertEquals('https://nytimes.com/article', $result->url);
         $this->assertStringContainsString('nytimes.com', $result->imageUrl);
         $this->assertEquals('nyt-789', $result->externalId);

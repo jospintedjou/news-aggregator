@@ -105,8 +105,8 @@ php artisan serve
 ```
 
 The API will be available at:
-- **API Endpoints:** `http://localhost:8000/api`
 - **Swagger UI:** `http://localhost:8000/api/documentation`
+- **API Endpoints:** `http://localhost:8000/api`
 
 ---
 

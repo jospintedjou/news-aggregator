@@ -61,14 +61,14 @@ class AuthAnnotations
      *     path="/login",
      *     tags={"Authentication"},
      *     summary="Login user",
-     *     description="Authenticate user and receive a token",
+     *     description="Authenticate user and receive a token. Use test credentials: test@example.com / password",
      *     operationId="login",
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"email", "password"},
-     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="password123")
+     *             @OA\Property(property="email", type="string", format="email", example="test@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password")
      *         )
      *     ),
      *     @OA\Response(

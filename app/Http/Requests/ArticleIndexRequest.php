@@ -23,16 +23,48 @@ class ArticleIndexRequest extends FormRequest
      */
     public function rules(): array
     {
+        $validSources = array_column(NewsSource::cases(), 'value');
+        
         return [
             'q' => 'nullable|string|max:255',
-            'source' => ['nullable', 'string', Rule::in(array_column(NewsSource::cases(), 'value'))],
+            'source' => 'nullable|string', // Comma-separated sources
+            'source.*' => Rule::in($validSources), // Validate each source if array
             'category' => 'nullable|string|max:100',
             'author' => 'nullable|string|max:255',
             'from' => 'nullable|date|before_or_equal:to',
             'to' => 'nullable|date|after_or_equal:from',
             'per_page' => 'nullable|integer|min:1|max:100',
-            'ignore_preferences' => 'nullable|boolean',
+            'ignore_preferences' => 'sometimes|boolean',
         ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Convert ignore_preferences to boolean if it's a string
+        if ($this->has('ignore_preferences')) {
+            $value = $this->input('ignore_preferences');
+            if (is_string($value)) {
+                $this->merge([
+                    'ignore_preferences' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+                ]);
+            }
+        }
+        
+        // If source is a comma-separated string, validate each one
+        if ($this->has('source') && is_string($this->source)) {
+            $sources = array_filter(array_map('trim', explode(',', $this->source)));
+            $validSources = array_column(NewsSource::cases(), 'value');
+            
+            foreach ($sources as $source) {
+                if (!in_array($source, $validSources)) {
+                    $this->merge(['source' => null]); // Will fail validation
+                    break;
+                }
+            }
+        }
     }
 
     /**

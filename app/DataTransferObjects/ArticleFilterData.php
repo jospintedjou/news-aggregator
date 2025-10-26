@@ -8,7 +8,7 @@ readonly class ArticleFilterData
 {
     public function __construct(
         public ?string $keyword = null,
-        public ?NewsSource $source = null,
+        public array|string|null $source = null, // Support multiple sources
         public ?string $category = null,
         public ?string $author = null,
         public ?string $dateFrom = null,
@@ -24,7 +24,7 @@ readonly class ArticleFilterData
     {
         return new self(
             keyword: $data['q'] ?? null,
-            source: isset($data['source']) ? NewsSource::from($data['source']) : null,
+            source: $data['source'] ?? null, // Can be string (comma-separated) or array
             category: $data['category'] ?? null,
             author: $data['author'] ?? null,
             dateFrom: $data['from'] ?? null,
@@ -41,7 +41,7 @@ readonly class ArticleFilterData
     {
         return [
             'q' => $this->keyword,
-            'source' => $this->source?->value,
+            'source' => $this->source, // Repository handles both string and array
             'category' => $this->category,
             'author' => $this->author,
             'from' => $this->dateFrom,

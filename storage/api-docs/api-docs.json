@@ -30,38 +30,33 @@
                     "Articles"
                 ],
                 "summary": "Get all articles with filtering",
-                "description": "Retrieve a paginated list of articles with optional filtering by keyword, source, category, date range, and author",
+                "description": "Retrieve a paginated list of articles with optional filtering. When authenticated, user preferences (preferred sources, categories, keywords) are automatically applied unless 'ignore_preferences=1' is set. Explicit filters override preferences.",
                 "operationId": "getArticles",
                 "parameters": [
                     {
-                        "name": "keyword",
+                        "name": "q",
                         "in": "query",
                         "description": "Search keyword (searches in title, description, content)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "example": "technology"
+                            "example": "news"
                         }
                     },
                     {
                         "name": "source",
                         "in": "query",
-                        "description": "Filter by news source",
+                        "description": "Filter by news source (comma-separated for multiple sources). When authenticated, this overrides user's preferred sources.",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "newsapi",
-                                "guardian",
-                                "nytimes"
-                            ],
-                            "example": "newsapi"
+                            "example": "newsapi,guardian"
                         }
                     },
                     {
                         "name": "category",
                         "in": "query",
-                        "description": "Filter by category",
+                        "description": "Filter by category. When authenticated, this overrides user's preferred categories.",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -69,7 +64,17 @@
                         }
                     },
                     {
-                        "name": "date_from",
+                        "name": "author",
+                        "in": "query",
+                        "description": "Filter by author name. When authenticated, this overrides user's preferred authors.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "John Smith"
+                        }
+                    },
+                    {
+                        "name": "from",
                         "in": "query",
                         "description": "Filter articles from this date (inclusive)",
                         "required": false,
@@ -80,7 +85,7 @@
                         }
                     },
                     {
-                        "name": "date_to",
+                        "name": "to",
                         "in": "query",
                         "description": "Filter articles up to this date (inclusive)",
                         "required": false,
@@ -88,16 +93,6 @@
                             "type": "string",
                             "format": "date",
                             "example": "2025-12-31"
-                        }
-                    },
-                    {
-                        "name": "author",
-                        "in": "query",
-                        "description": "Filter by author name",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "John Smith"
                         }
                     },
                     {
@@ -120,6 +115,16 @@
                             "type": "integer",
                             "default": 15,
                             "example": 15
+                        }
+                    },
+                    {
+                        "name": "ignore_preferences",
+                        "in": "query",
+                        "description": "Set to 1 to ignore user preferences and return all articles (authenticated users only)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": false
                         }
                     }
                 ],
@@ -163,7 +168,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/articles/{id}": {
@@ -219,73 +229,6 @@
                         }
                     }
                 }
-            }
-        },
-        "/articles/personalized": {
-            "get": {
-                "tags": [
-                    "Articles"
-                ],
-                "summary": "Get personalized articles",
-                "description": "Retrieve articles filtered by user preferences (requires authentication)",
-                "operationId": "getPersonalizedArticles",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Article"
-                                            }
-                                        },
-                                        "meta": {
-                                            "properties": {
-                                                "current_page": {
-                                                    "type": "integer"
-                                                },
-                                                "last_page": {
-                                                    "type": "integer"
-                                                },
-                                                "per_page": {
-                                                    "type": "integer"
-                                                },
-                                                "total": {
-                                                    "type": "integer"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
             }
         },
         "/register": {
@@ -409,7 +352,7 @@
                     "Authentication"
                 ],
                 "summary": "Login user",
-                "description": "Authenticate user and receive a token",
+                "description": "Authenticate user and receive a token. Use test credentials: test@example.com / password",
                 "operationId": "login",
                 "requestBody": {
                     "required": true,
@@ -424,12 +367,12 @@
                                     "email": {
                                         "type": "string",
                                         "format": "email",
-                                        "example": "john@example.com"
+                                        "example": "test@example.com"
                                     },
                                     "password": {
                                         "type": "string",
                                         "format": "password",
-                                        "example": "password123"
+                                        "example": "password"
                                     }
                                 },
                                 "type": "object"
