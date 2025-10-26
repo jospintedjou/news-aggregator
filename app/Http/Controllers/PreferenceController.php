@@ -15,6 +15,8 @@ class PreferenceController extends Controller
 
     /**
      * Get the authenticated user's preferences
+     * 
+     * @endpoint GET /api/preferences
      *
      * @param Request $request
      * @return JsonResponse
@@ -30,6 +32,8 @@ class PreferenceController extends Controller
 
     /**
      * Store or update user preferences
+     * 
+     * @endpoint POST /api/preferences
      *
      * @param StorePreferenceRequest $request
      * @return JsonResponse
@@ -54,6 +58,8 @@ class PreferenceController extends Controller
 
     /**
      * Delete user preferences
+     * 
+     * @endpoint DELETE /api/preferences
      *
      * @param Request $request
      * @return JsonResponse

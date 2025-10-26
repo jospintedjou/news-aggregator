@@ -16,6 +16,11 @@ class AuthController extends Controller
 
     /**
      * Register a new user
+     * 
+     * @endpoint POST /api/register
+     *
+     * @param RegisterRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function register(RegisterRequest $request)
     {
@@ -30,6 +35,11 @@ class AuthController extends Controller
 
     /**
      * Login user and return token
+     * 
+     * @endpoint POST /api/login
+     *
+     * @param LoginRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function login(LoginRequest $request)
     {
@@ -44,6 +54,11 @@ class AuthController extends Controller
 
     /**
      * Logout user (revoke token)
+     * 
+     * @endpoint POST /api/logout
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function logout(Request $request)
     {
@@ -56,6 +71,11 @@ class AuthController extends Controller
 
     /**
      * Get authenticated user information
+     * 
+     * @endpoint GET /api/user
+     *
+     * @param Request $request
+     * @return UserResource
      */
     public function user(Request $request)
     {

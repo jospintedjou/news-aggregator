@@ -19,6 +19,8 @@ class ArticleController extends Controller
 
     /**
      * Display a listing of articles with filters and pagination
+     * 
+     * @endpoint GET /api/articles
      *
      * @param ArticleIndexRequest $request
      * @return ArticleCollection
@@ -34,6 +36,8 @@ class ArticleController extends Controller
 
     /**
      * Display the specified article
+     * 
+     * @endpoint GET /api/articles/{id}
      *
      * @param int $id
      * @return ArticleResource|JsonResponse
@@ -53,6 +57,8 @@ class ArticleController extends Controller
 
     /**
      * Get available news sources
+     * 
+     * @endpoint GET /api/sources
      *
      * @return JsonResponse
      */
@@ -71,6 +77,8 @@ class ArticleController extends Controller
 
     /**
      * Get available categories
+     * 
+     * @endpoint GET /api/categories
      *
      * @return JsonResponse
      */
@@ -85,6 +93,8 @@ class ArticleController extends Controller
 
     /**
      * Get available authors
+     * 
+     * @endpoint GET /api/authors
      *
      * @return JsonResponse
      */
